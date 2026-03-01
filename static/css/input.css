@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+/* Your custom styles */
+@theme {
+  --color-dotwarf-primary: #3b82f6; 
+  --color-dotwarf-secondary: #8b5cf6;
+}
