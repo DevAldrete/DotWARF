@@ -24,7 +24,7 @@ WORKDIR /app/api
 COPY api/pyproject.toml api/uv.lock ./
 RUN uv sync --frozen --no-dev
 
-# Copy API source
+# Copy API source (includes alembic.ini and migrations/)
 COPY api/ ./
 
 # Copy frontend assets one level up (PROJECT_ROOT = /app)
@@ -33,5 +33,6 @@ COPY --from=css-builder /build/static /app/static/
 
 EXPOSE 8000
 
-# Run from /app/api so `from app.xxx` imports resolve correctly
+# Run from /app/api so `from app.xxx` imports resolve correctly.
+# Migrations run automatically at startup via the FastAPI lifespan handler.
 CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

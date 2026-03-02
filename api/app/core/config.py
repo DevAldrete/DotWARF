@@ -12,6 +12,9 @@ class Settings(BaseSettings):
 
     # Security
     ADMIN_API_KEY: str = "change-me-in-production"
+    # Comma-separated list of allowed hostnames (TrustedHostMiddleware).
+    # Use ["*"] only in development; set to your actual domain(s) in prod.
+    ALLOWED_HOSTS: list[str] = ["*"]
 
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://dotwarf:dotwarf@localhost:5432/dotwarf"
@@ -38,7 +41,8 @@ class Settings(BaseSettings):
     SMTP_FROM_EMAIL: str = ""
     CONTACT_RECIPIENT_EMAIL: str = ""  # Your inbox
 
-    # CORS
+    # CORS — set to your production domain(s) via env var in Railway.
+    # Example: CORS_ORIGINS='["https://dotwarf.com"]'
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:5173"]
 
 
