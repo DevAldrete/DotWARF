@@ -35,4 +35,5 @@ EXPOSE 8000
 
 # Run from /app/api so `from app.xxx` imports resolve correctly.
 # Migrations run automatically at startup via the FastAPI lifespan handler.
-CMD ["uv", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# $PORT is injected by Railway; fall back to 8000 for local/Docker Compose use.
+CMD ["sh", "-c", "uv run uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
