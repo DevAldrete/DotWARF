@@ -1,11 +1,8 @@
-import asyncio
 import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from alembic import command as alembic_command
-from alembic.config import Config as AlembicConfig
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
@@ -22,9 +19,7 @@ from app.core.config import get_settings
 from app.core.logging import configure_logging
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
-# PROJECT_ROOT is the repo root (one level above api/)
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-ALEMBIC_INI = PROJECT_ROOT / "api" / "alembic.ini"
 
 # ── Logging (must run before any logger.xxx calls) ────────────────────────────
 configure_logging()
@@ -37,19 +32,11 @@ limiter = Limiter(key_func=get_remote_address, default_limits=["200/day", "60/ho
 
 
 # ── Lifespan ──────────────────────────────────────────────────────────────────
-def _run_migrations() -> None:
-    """Synchronous wrapper — called via run_in_executor to avoid nesting asyncio.run()
-    inside uvicorn's already-running event loop."""
-    cfg = AlembicConfig(str(ALEMBIC_INI))
-    alembic_command.upgrade(cfg, "head")
-
-
+# Migrations are handled by Railway's preDeployCommand (see railway.toml),
+# which runs before this container starts and has access to the private network.
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    logger.info("Running database migrations…")
-    loop = asyncio.get_event_loop()
-    await loop.run_in_executor(None, _run_migrations)
-    logger.info("Migrations complete. Ready.")
+    logger.info("Ready.")
     yield
     logger.info("Shutting down.")
 
