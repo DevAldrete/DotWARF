@@ -1,0 +1,12 @@
+# Python virtual environment — never copy the host venv into the image.
+# uv sync inside the Dockerfile creates the correct venv for the container OS.
+api/.venv
+
+# Local env files — secrets must be injected via Railway service variables.
+api/.env
+
+# Node dependencies
+node_modules
+
+# Compiled CSS (rebuilt in the css-builder stage)
+static/css/output.css

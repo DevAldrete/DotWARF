@@ -19,10 +19,15 @@ FROM python:3.13-slim
 # Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-# Install Python dependencies inside /app/api so the venv lives next to the source
+# Install Python dependencies inside /app/api so the venv lives next to the source.
+# UV_PYTHON_PREFERENCE=only-system forces uv to use the image's own Python
+# instead of downloading/symlinking a uv-managed Python. Without this, the
+# venv symlinks point to a host path that doesn't exist in the container,
+# causing uv to silently nuke and rebuild the venv on every `uv run` call
+# (including the Railway pre-deploy migration command).
 WORKDIR /app/api
 COPY api/pyproject.toml api/uv.lock ./
-RUN uv sync --frozen --no-dev
+RUN UV_PYTHON_PREFERENCE=only-system uv sync --frozen --no-dev
 
 # Copy API source (includes alembic.ini and migrations/)
 COPY api/ ./
@@ -33,7 +38,5 @@ COPY --from=css-builder /build/static /app/static/
 
 EXPOSE 8000
 
-# Run from /app/api so `from app.xxx` imports resolve correctly.
-# Migrations run automatically at startup via the FastAPI lifespan handler.
-# $PORT is injected by Railway; fall back to 8000 for local/Docker Compose use.
-CMD ["sh", "-c", "uv run uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# UV_PYTHON_PREFERENCE=only-system keeps uv from re-resolving the venv at runtime.
+CMD ["sh", "-c", "UV_PYTHON_PREFERENCE=only-system uv run uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
