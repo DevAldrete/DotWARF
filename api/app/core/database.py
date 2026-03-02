@@ -11,6 +11,8 @@ engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,
     future=True,
+    # Fail fast if DB is unreachable instead of hanging indefinitely
+    connect_args={"timeout": 30},
 )
 
 AsyncSessionLocal = async_sessionmaker(

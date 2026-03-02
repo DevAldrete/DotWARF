@@ -1,4 +1,13 @@
+# Modules
 node_modules/
+
+# Build
 build/
+
+# Agents
 skills-lock.json
 .agents/
+
+# Logs
+build.logs
+deploy.logs

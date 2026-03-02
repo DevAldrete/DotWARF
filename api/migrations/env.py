@@ -64,6 +64,8 @@ async def run_async_migrations() -> None:
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
+        # Fail fast if DB is unreachable instead of hanging indefinitely
+        connect_args={"timeout": 30},
     )
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
