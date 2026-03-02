@@ -25,6 +25,10 @@ if not database_url:
 
     database_url = get_settings().DATABASE_URL
 
+# Railway (and most PaaS) provide a plain postgresql:// URL.
+# Normalise to the asyncpg dialect so Alembic never falls back to psycopg2.
+database_url = database_url.replace("postgresql://", "postgresql+asyncpg://", 1)
+
 # Alembic requires the async driver prefix for async engines
 config.set_main_option("sqlalchemy.url", database_url)
 

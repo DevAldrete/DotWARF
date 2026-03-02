@@ -1,4 +1,5 @@
 from functools import lru_cache
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -16,8 +17,16 @@ class Settings(BaseSettings):
     # Use ["*"] only in development; set to your actual domain(s) in prod.
     ALLOWED_HOSTS: list[str] = ["*"]
 
-    # Database
+    # Database — normalised to asyncpg dialect automatically.
+    # Accepts plain postgresql:// (e.g. from Railway) and rewrites to +asyncpg.
     DATABASE_URL: str = "postgresql+asyncpg://dotwarf:dotwarf@localhost:5432/dotwarf"
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def normalise_db_url(cls, v: str) -> str:
+        if isinstance(v, str):
+            return v.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return v
 
     # LiteLLM / AI
     LITELLM_MODEL: str = "openai/gpt-4o-mini"
