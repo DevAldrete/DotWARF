@@ -7,7 +7,6 @@ from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -81,9 +80,10 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
 app.add_middleware(SlowAPIMiddleware)
 
-# HTTPS redirect + trusted host (production only — Railway terminates TLS at the edge)
+# Trusted host (production only — Railway terminates TLS at the edge,
+# so HTTPSRedirectMiddleware is not used; it would block internal
+# healthcheck probes which arrive over plain HTTP).
 if not settings.DEBUG:
-    app.add_middleware(HTTPSRedirectMiddleware)
     # Always include healthcheck.railway.app so Railway's health probe (which
     # originates from that hostname) is not rejected with a 400.
     allowed_hosts = list(settings.ALLOWED_HOSTS)
