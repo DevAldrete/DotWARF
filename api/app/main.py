@@ -1,10 +1,12 @@
 import logging
 from contextlib import asynccontextmanager
 from collections.abc import AsyncGenerator
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -13,6 +15,9 @@ from slowapi.util import get_remote_address
 from app.api.v1.router import api_router
 from app.core.config import get_settings
 from app.core.database import create_tables
+
+# Root of the project (one level above api/)
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -60,8 +65,17 @@ app.add_middleware(
 # Routers
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
+# Static assets (/static/css/output.css, /static/js/…)
+app.mount("/static", StaticFiles(directory=PROJECT_ROOT / "static"), name="static")
+
 
 # ── Health check ─────────────────────────────────────────────────────────────
 @app.get("/health", tags=["health"])
 async def health() -> dict[str, str]:
     return {"status": "ok"}
+
+
+# ── Frontend catch-all (must be last) ────────────────────────────────────────
+@app.get("/{full_path:path}", include_in_schema=False)
+async def serve_frontend(full_path: str) -> FileResponse:
+    return FileResponse(PROJECT_ROOT / "index.html")
