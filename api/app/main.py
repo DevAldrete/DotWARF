@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -36,11 +37,18 @@ limiter = Limiter(key_func=get_remote_address, default_limits=["200/day", "60/ho
 
 
 # ── Lifespan ──────────────────────────────────────────────────────────────────
+def _run_migrations() -> None:
+    """Synchronous wrapper — called via run_in_executor to avoid nesting asyncio.run()
+    inside uvicorn's already-running event loop."""
+    cfg = AlembicConfig(str(ALEMBIC_INI))
+    alembic_command.upgrade(cfg, "head")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Running database migrations…")
-    cfg = AlembicConfig(str(ALEMBIC_INI))
-    alembic_command.upgrade(cfg, "head")
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(None, _run_migrations)
     logger.info("Migrations complete. Ready.")
     yield
     logger.info("Shutting down.")
