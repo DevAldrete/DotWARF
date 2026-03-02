@@ -2,9 +2,6 @@
 builder = "dockerfile"
 
 [deploy]
-# Runs inside the private network before the app starts — DB is reachable here.
-# If the migration fails, the deployment is aborted and the old version stays live.
-preDeployCommand = "cd /app/api && UV_PYTHON_PREFERENCE=only-system uv run alembic upgrade head --verbose 2>&1"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "ON_FAILURE"

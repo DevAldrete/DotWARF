@@ -1,4 +1,6 @@
 import logging
+import subprocess
+import sys
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -32,10 +34,32 @@ limiter = Limiter(key_func=get_remote_address, default_limits=["200/day", "60/ho
 
 
 # ── Lifespan ──────────────────────────────────────────────────────────────────
-# Migrations are handled by Railway's preDeployCommand (see railway.toml),
-# which runs before this container starts and has access to the private network.
+def _run_migrations() -> None:
+    """Run Alembic migrations before the app accepts traffic.
+
+    Executed as a subprocess so the migration environment is fully isolated
+    from the running application (separate engine, separate connection).
+    """
+    logger.info("Running database migrations …")
+    result = subprocess.run(
+        [sys.executable, "-m", "alembic", "upgrade", "head"],
+        cwd=Path(__file__).resolve().parents[1],  # /app/api
+        capture_output=True,
+        text=True,
+    )
+    if result.stdout:
+        logger.info("alembic stdout: %s", result.stdout.strip())
+    if result.returncode != 0:
+        logger.error("alembic stderr: %s", result.stderr.strip())
+        raise RuntimeError(
+            f"Alembic migration failed (exit {result.returncode}): {result.stderr.strip()}"
+        )
+    logger.info("Migrations complete.")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    _run_migrations()
     logger.info("Ready.")
     yield
     logger.info("Shutting down.")
