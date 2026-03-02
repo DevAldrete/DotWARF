@@ -60,9 +60,14 @@ app.add_middleware(SlowAPIMiddleware)
 # HTTPS redirect + trusted host (production only — Railway terminates TLS at the edge)
 if not settings.DEBUG:
     app.add_middleware(HTTPSRedirectMiddleware)
+    # Always include healthcheck.railway.app so Railway's health probe (which
+    # originates from that hostname) is not rejected with a 400.
+    allowed_hosts = list(settings.ALLOWED_HOSTS)
+    if "healthcheck.railway.app" not in allowed_hosts and "*" not in allowed_hosts:
+        allowed_hosts.append("healthcheck.railway.app")
     app.add_middleware(
         TrustedHostMiddleware,
-        allowed_hosts=settings.ALLOWED_HOSTS,
+        allowed_hosts=allowed_hosts,
     )
 
 # CORS

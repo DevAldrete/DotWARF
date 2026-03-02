@@ -6,6 +6,6 @@ builder = "dockerfile"
 # If the migration fails, the deployment is aborted and the old version stays live.
 preDeployCommand = "cd /app/api && uv run alembic upgrade head"
 healthcheckPath = "/health"
-healthcheckTimeout = 60
-restartPolicyType = "on_failure"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3
